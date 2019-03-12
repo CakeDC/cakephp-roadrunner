@@ -2,7 +2,6 @@ Roadrunner for CakePHP
 ===================
 
 [![Build Status](https://secure.travis-ci.org/cakedc/cakephp-roadrunner.png?branch=master)](http://travis-ci.org/cakedc/cakephp-roadrunner)
-[![Coverage Status](https://img.shields.io/codecov/c/gh/cakedc/cakephp-roadrunner.svg?style=flat-square)](https://codecov.io/gh/cakedc/cakephp-roadrunner)
 [![Downloads](https://poser.pugx.org/cakedc/cakephp-roadrunner/d/total.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
 [![Latest Version](https://poser.pugx.org/cakedc/cakephp-roadrunner/v/stable.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
 [![License](https://poser.pugx.org/cakedc/cakephp-roadrunner/license.svg)](https://packagist.org/packages/cakedc/cakephp-roadrunner)

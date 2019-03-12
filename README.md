@@ -21,7 +21,8 @@ Setup
 * Create a RoadRunner worker file, or use the example worker provided
 
 ```bash
-cp vendor/cakedc/cakephp-roadrunner/worker/* .
+cp vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php .
+cp vendor/cakedc/cakephp-roadrunner/worker/.rr.json .
 ```
 
 Note the configuration is stored in .rr.json file, check all possible keys here

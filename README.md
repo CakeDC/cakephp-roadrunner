@@ -9,7 +9,7 @@ Roadrunner for CakePHP
 Requirements
 ------------
 
-* CakePHP 3.4.0+
+* CakePHP 3.6.0+
 * PHP 7.1+
 
 Setup

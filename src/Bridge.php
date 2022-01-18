@@ -57,7 +57,7 @@ class Bridge
         if (!file_exists($this->rootDir)) {
             throw new CakeRoadrunnerException(
                 sprintf(
-                    'Root directory %s not found.',
+                    CakeRoadrunnerException::ROOT_DIR_NOT_FOUND,
                     $this->rootDir
                 )
             );
@@ -68,7 +68,7 @@ class Bridge
         if ($this->application == null && class_exists('\App\Application')) {
             $this->application = new \App\Application($this->configDir);
         } else {
-            throw new CakeRoadrunnerException('Unable to create instance of Application');
+            throw new CakeRoadrunnerException(CakeRoadrunnerException::APP_INSTANCE_NOT_CREATED);
         }
 
         $this->server = $server ?? new Server($this->application);

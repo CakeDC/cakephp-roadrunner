@@ -9,6 +9,9 @@
         "spiral/roadrunner": "^2.7",
         "nyholm/psr7": "^1.4"
     },
+    "scripts": {
+        "test": "phpunit --colors=always"
+    },
     "require-dev": {
         "phpunit/phpunit": "~8.5.0 || ^9.3"
     },
@@ -20,6 +23,7 @@
     "autoload-dev": {
         "psr-4": {
             "CakeDC\\Roadrunner\\Test\\": "tests",
+            "App\\": "tests/test_app/src",
             "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
         }
     }

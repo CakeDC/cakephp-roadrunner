@@ -58,7 +58,7 @@ cp vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php .
 ```
 
 Next we need to instruct Roadrunner to use our worker a long with a few other configs. Create a 
-[Roadrunner config](https://roadrunner.dev/docs/intro-config) file, or use the (example config)[worker/rr.yaml] 
+[Roadrunner config](https://roadrunner.dev/docs/intro-config) file, or use the [example config](worker/rr.yaml) 
 provided:
 
 ```console

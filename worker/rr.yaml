@@ -1,0 +1,26 @@
+rpc:
+  listen: tcp://127.0.0.1:6001
+server:
+  command: "php cakephp-worker.php"
+
+http:
+  address: :8080
+  pool:
+    num_workers: 4
+    max_jobs: 64
+  # optional for serving static assets:
+  middleware: [ "static" ]
+  static:
+    dir: "./webroot"
+    forbid: [ "" ]
+    calculate_etag: false
+    weak: false
+    allow: [ ".js", ".css", ".eot", ".svg", ".ico", ".tff", ".woff", ".woff2"]
+
+reload:
+  interval: 1s
+  patterns: [ ".php" ]
+  services:
+    http:
+      recursive: true
+      dirs: [ "." ]

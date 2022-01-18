@@ -1,12 +1,39 @@
 <?php
-require __DIR__ . "/vendor/autoload.php";
-$bridge = new \CakeDC\Roadrunner\Bridge(__DIR__);
-$bridge->bootstrap(null, null, null);
-$relay = new \Spiral\Goridge\StreamRelay(STDIN, STDOUT);
-$psr7 = new \Spiral\RoadRunner\PSR7Client(new \Spiral\RoadRunner\Worker($relay));
+declare(strict_types=1);
 
-while ($req = $psr7->acceptRequest()) {
-//     \CakeDC\Api\Service\ServiceRegistry::getServiceLocator()->clear(); // reset API cache if you're using CakeDC/Api plugin
-    $psr7response = $bridge->handle($req);
-    $psr7->respond($psr7response);
+ini_set('display_errors', 'stderr');
+
+// You may need to change the `$rootDirectory` depending on where you've copied this file. This sample assumes the
+// worker is in the same location as your `vendor` directory.
+$rootDirectory = __DIR__;
+include $rootDirectory . '/vendor/autoload.php';
+
+use CakeDC\Roadrunner\Bridge;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Spiral\RoadRunner\Http\PSR7Worker;
+use Spiral\RoadRunner\Worker;
+
+$bridge = (new Bridge($rootDirectory))->bootstrap();
+$psrFactory = new Psr17Factory();
+$psr7 = new PSR7Worker(Worker::create(), $psrFactory, $psrFactory, $psrFactory);
+
+while (true) {
+    try {
+        $request = $psr7->waitRequest();
+        if (!$request instanceof ServerRequestInterface) { // Termination request received
+            break;
+        }
+    } catch (\Throwable $e) {
+        $psr7->respond(new Response(400, [], get_class($e) . ': '. $e->getMessage()));
+        continue;
+    }
+
+    try {
+        $response = $bridge->handle($request);
+        $psr7->respond($response);
+    } catch (\Throwable $e) {
+        $psr7->respond(new Response(500, [],  get_class($e) . ': '. $e->getMessage()));
+    }
 }

@@ -71,7 +71,7 @@ Start the server:
 /usr/local/bin/rr serve -d -c rr.yaml
 ```
 
-You should now be able to browse to http::/localhost:8080
+You should now be able to browse to http://localhost:8080
 
 ## Sessions
 

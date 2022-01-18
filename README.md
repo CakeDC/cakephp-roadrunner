@@ -48,10 +48,10 @@ Be sure to check the Roadrunner documentation for up-to-date [docker images](htt
 ### Configuring Roadrunner
 
 In a typical PHP application your webserver forwards `*.php` requests to php-fpm, which in turn calls the CakePHP
-front controller `webroot/index.php`. With Roadrunner, the worker file gets called by active RR workers to handle
-incoming requests to your application. So `cakephp-worker.php` is now acting as the frameworks front controller.
+front controller `webroot/index.php`. With Roadrunner, the worker file gets called by active workers to handle
+incoming requests to your application. 
 
-Create a Roadrunner worker file, or use the [worker/cakephp-worker.php](example worker) provided:
+Create a Roadrunner worker file, or use the [example worker](worker/cakephp-worker.php) provided:
 
 ```console
 cp vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php .

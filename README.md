@@ -65,11 +65,13 @@ provided:
 cp vendor/cakedc/cakephp-roadrunner/worker/rr.yaml .
 ```
 
-Start the server, either using your own configuration or the sample configuration provided in the plugin
+Start the server:
 
 ```console
 /usr/local/bin/rr serve -d -c rr.yaml
 ```
+
+You should now be able to browse to http::/localhost:8080
 
 ## Sessions
 

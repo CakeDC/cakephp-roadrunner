@@ -8,16 +8,17 @@ ini_set('display_errors', 'stderr');
 $rootDirectory = __DIR__;
 include $rootDirectory . '/vendor/autoload.php';
 
+use Cake\Http\Response;
 use CakeDC\Roadrunner\Bridge;
+use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 
 $bridge = (new Bridge($rootDirectory))->bootstrap();
 $psrFactory = new Psr17Factory();
-$psr7 = new PSR7Worker(Worker::create(), $psrFactory, $psrFactory, $psrFactory);
+$psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), $psrFactory, $psrFactory);
 
 while (true) {
     try {

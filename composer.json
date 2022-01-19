@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.0",
         "cakephp/cakephp": "^4.3",
-        "spiral/roadrunner": "^2.7"
+        "spiral/roadrunner": "^2.7",
+        "nyholm/psr7": "^1.4"
     },
     "scripts": {
         "test": "phpunit --colors=always"

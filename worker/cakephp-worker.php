@@ -17,7 +17,6 @@ ini_set('display_errors', 'stderr');
 $rootDirectory = __DIR__;
 include $rootDirectory . '/vendor/autoload.php';
 
-use Cake\Http\Response;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\ErrorHandler;
 use Psr\Http\Message\ServerRequestInterface;

@@ -3,6 +3,7 @@
 namespace CakeDC\Roadrunner\Test\TestCase;
 
 use Cake\Core\Configure;
+use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
@@ -22,14 +23,16 @@ class BridgeTest extends TestCase
 
     public function test_handle(): void
     {
-        $response = (new Bridge($this->rootDir))->handle(ServerRequestFactory::fromGlobals());
-        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $request = $this->buildRequest();
+        $response = (new Bridge($this->rootDir))->handle($request);
+        $this->assertEquals(200, $response->getStatusCode());
     }
 
     public function test_handle_with_trailing_root_directory_slash(): void
     {
-        $response = (new Bridge($this->rootDir))->handle(ServerRequestFactory::fromGlobals());
-        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $request = $this->buildRequest();
+        $response = (new Bridge($this->rootDir))->handle($request);
+        $this->assertEquals(200, $response->getStatusCode());
     }
 
     public function test_construct_throws_exception_when_root_dir_not_found(): void
@@ -50,5 +53,43 @@ class BridgeTest extends TestCase
         $this->expectException(CakeRoadrunnerException::class);
         $this->expectExceptionMessage(CakeRoadrunnerException::APP_INSTANCE_NOT_CREATED);
         (new Bridge($this->rootDir));
+    }
+
+    /**
+     * @todo need to mock a request
+     * @param array $server
+     * @return ServerRequest
+     */
+    private function buildRequest(array $server = []): ServerRequest
+    {
+        return ServerRequestFactory::fromGlobals(array_merge([
+            'DOCUMENT_ROOT' => __DIR__ . '/../test_app',
+            'REMOTE_ADDR' => '127.0.0.1',
+            'REMOTE_PORT' => '32778',
+            'SERVER_SOFTWARE' => 'PHP 8.0.14 Development Server',
+            'SERVER_PROTOCOL' => 'HTTP/1.1',
+            'SERVER_NAME' => 'localhost',
+            'SERVER_PORT' => '8765',
+            'REQUEST_URI' => '/',
+            'REQUEST_METHOD' => 'GET',
+            'SCRIPT_NAME' => '/index.php',
+            'SCRIPT_FILENAME' => '/var/www/personal/cakephp-rr/webroot/index.php',
+            'PHP_SELF' => '/index.php',
+            'HTTP_HOST' => 'localhost:8080',
+            'HTTP_USER_AGENT' => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0',
+            'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.5',
+            'HTTP_ACCEPT_ENCODING' => 'gzip, deflate',
+            'HTTP_CONNECTION' => 'keep-alive',
+            'HTTP_COOKIE' => '',
+            'HTTP_UPGRADE_INSECURE_REQUESTS' => '1',
+            'HTTP_SEC_FETCH_DEST' => 'document',
+            'HTTP_SEC_FETCH_MODE' => 'navigate',
+            'HTTP_SEC_FETCH_SITE' => 'none',
+            'HTTP_SEC_FETCH_USER' => '?1',
+            'HTTP_SEC_GPC' => '1',
+            'REQUEST_TIME_FLOAT' => 1642563371.0406,
+            'REQUEST_TIME' => 1642563371,
+        ], $server));
     }
 }

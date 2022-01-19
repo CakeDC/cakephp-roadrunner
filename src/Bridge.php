@@ -7,6 +7,7 @@ use Cake\Core\HttpApplicationInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
+use Cake\Http\ServerRequestFactory;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -83,6 +84,7 @@ class Bridge
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        $request = $this->convertRequest($request);
         $middleware = $this->application->middleware(new MiddlewareQueue());
         $middleware = $this->application->pluginMiddleware($middleware);
 
@@ -105,5 +107,33 @@ class Bridge
         session_write_close();
 
         return $response;
+    }
+
+    /**
+     * @todo needs documentation
+     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @return \Psr\Http\Message\ServerRequestInterface
+     */
+    private function convertRequest(ServerRequestInterface $request): ServerRequestInterface
+    {
+        $server = $request->getServerParams();
+        $server['REQUEST_TIME'] = time();
+        $server['REQUEST_TIME_FLOAT'] = microtime(true);
+        $server['REMOTE_ADDR'] = '127.0.0.1';
+        $server['SERVER_PROTOCOL'] = $request->getUri()->getScheme();
+        $server['REQUEST_METHOD'] = $request->getMethod();
+        $server['SERVER_NAME'] = $request->getUri()->getHost();
+        $server['SERVER_PORT'] = $request->getUri()->getPort();
+        $server['REQUEST_URI'] = $request->getUri()->getPath();
+
+        $query = $request->getQueryParams();
+        $body = $request->getParsedBody();
+        $cookies = $request->getCookieParams();
+        $files = $request->getUploadedFiles();
+
+        $cakeRequest = ServerRequestFactory::fromGlobals($server, $query, $body, $cookies, $files);
+        $cakeRequest->trustProxy = true;
+
+        return $cakeRequest;
     }
 }

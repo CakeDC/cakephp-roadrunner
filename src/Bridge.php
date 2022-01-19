@@ -19,7 +19,7 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * ```php
  * # worker/cakephp-worker.php
- * $bridge = (new Bridge(__DIR__))->bootstrap();
+ * $bridge = new Bridge(__DIR__);
  * ```
  *
  * When a request is ready to be handled in your worker:

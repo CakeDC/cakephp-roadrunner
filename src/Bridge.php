@@ -88,12 +88,12 @@ class Bridge
 
         $this->server->dispatchEvent('Server.buildMiddleware', ['middleware' => $middleware]);
         //$middleware->add($this->application);
+        /** @var \Cake\Http\Response $response */
         $response = (new Runner())->run($middleware, $request, $this->application);
 
         $cookies = [];
         foreach ($response->getCookieCollection() as $cookie) {
-            /** @var \Cake\Http\Cookie\Cookie $cookie **/
-            if ($cookie->getExpiresTimestamp() === '0') {
+            if (!$cookie->getExpiresTimestamp()) {
                 $cookie = $cookie->withNeverExpire();
             }
             $cookies[] = $cookie->toHeaderValue();

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace CakeDC\Roadrunner;
 
 use Cake\Core\HttpApplicationInterface;
-use Cake\Http\Cookie\Cookie;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
@@ -34,23 +33,18 @@ use Psr\Http\Message\ServerRequestInterface;
 class Bridge
 {
     /**
-     * @var string Absolute path to the CakePHP config directory.
-     */
-    private string $configDir;
-
-    /**
-     * @var string $rootDir Absolute path to your applications root directory without the trailing slash. For example,
+     * @param string $rootDir Absolute path to your applications root directory without the trailing slash. For example,
      *      if your `composer.json` file is located at `/srv/app/composer.json` then `/srv/app` is your $rootDir.
-     * @var \Cake\Core\HttpApplicationInterface|null $application CakePHP Application instance (e.g. `src/Application`),
+     * @param \Cake\Core\HttpApplicationInterface|null $application CakePHP Application instance (e.g. `src/Application`),
      *      if null then the constructor will attempt creating an instance from `\App\Application`.
-     * @var \Cake\Http\Server|null $server Server instance, if null then one will be created for you.
+     * @param \Cake\Http\Server|null $server Server instance, if null then one will be created for you.
      */
     public function __construct(
         private string $rootDir,
         private ?HttpApplicationInterface $application = null,
         private ?Server $server = null
     ) {
-        if (str_ends_with('/', $this->rootDir)) {
+        if (str_ends_with($this->rootDir, '/')) {
             $this->rootDir = substr($this->rootDir, 0, -1);
         }
         if (!file_exists($this->rootDir)) {
@@ -62,39 +56,30 @@ class Bridge
             );
         }
 
-        $this->configDir = "$this->rootDir/config";
+        $configDir = "$this->rootDir/config";
 
         if ($this->application == null && class_exists('\App\Application')) {
-            $this->application = new \App\Application($this->configDir);
+            $this->application = new \App\Application($configDir);
         } else {
             throw new CakeRoadrunnerException(CakeRoadrunnerException::APP_INSTANCE_NOT_CREATED);
         }
 
         $this->server = $server ?? new Server($this->application);
-    }
 
-    /**
-     * Bootstrap the application.
-     *
-     * @return Bridge
-     */
-    public function bootstrap(): Bridge
-    {
-        require $this->configDir . '/requirements.php';
+        require $configDir . '/requirements.php';
         $this->application->bootstrap();
         /*
         if ($this->application instanceof \Cake\Core\PluginApplicationInterface) {
             $this->application->pluginBootstrap();
         }
         */
-        return $this;
     }
 
     /**
      * Handle the request and return a response.
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request PSR Server Request Interface
-     * @return ResponseInterface
+     * @return \Psr\Http\Message\ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
@@ -107,7 +92,7 @@ class Bridge
 
         $cookies = [];
         foreach ($response->getCookieCollection() as $cookie) {
-            /** @var Cookie $cookie **/
+            /** @var \Cake\Http\Cookie\Cookie $cookie **/
             if ($cookie->getExpiresTimestamp() === '0') {
                 $cookie = $cookie->withNeverExpire();
             }

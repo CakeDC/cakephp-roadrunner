@@ -16,7 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 
-$bridge = (new Bridge($rootDirectory))->bootstrap();
+$bridge = new Bridge($rootDirectory);
 $psrFactory = new Psr17Factory();
 $psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), $psrFactory, $psrFactory);
 

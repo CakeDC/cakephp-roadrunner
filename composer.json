@@ -5,15 +5,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.0",
-        "cakephp/cakephp": "^4.3",
-        "spiral/roadrunner": "^2.7",
-        "nyholm/psr7": "^1.4"
-    },
-    "scripts": {
-        "test": "phpunit --colors=always"
+        "cakephp/cakephp": "^4.2",
+        "nyholm/psr7": "^1.4",
+        "spiral/roadrunner": "^2.7"
     },
     "require-dev": {
-        "phpunit/phpunit": "~8.5.0 || ^9.3"
+        "cakephp/cakephp-codesniffer": "^4.2",
+        "phpunit/phpunit": "~8.5.0 || ^9.3",
+        "phpstan/phpstan": "^1.4"
     },
     "autoload": {
         "psr-4": {
@@ -26,5 +25,17 @@
             "App\\": "tests/test_app/src",
             "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
         }
+    },
+    "scripts": {
+        "analyze": [
+            "@test",
+            "@phpcs",
+            "@phpstan"
+        ],
+        "test": "phpunit --colors=always",
+        "phpcs": "phpcs --colors -p --standard=phpcs.xml src/",
+        "phpcbf": "phpcbf --colors --standard=phpcs.xml src/",
+        "phpstan": "phpstan analyse src/",
+        "coverage": "phpunit --coverage-html coverage/"
     }
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace CakeDC\Roadrunner;
 
@@ -18,7 +19,10 @@ class Psr7WorkerFactory
     public static function create(): PSR7Worker
     {
         return new PSR7Worker(
-            Worker::create(), new ServerRequestFactory(), new StreamFactory(), new UploadedFileFactory()
+            Worker::create(),
+            new ServerRequestFactory(),
+            new StreamFactory(),
+            new UploadedFileFactory()
         );
     }
 }

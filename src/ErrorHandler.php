@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace CakeDC\Roadrunner;
 
@@ -13,7 +14,7 @@ class ErrorHandler
      * @param int $status HTTP status code
      * @param \Throwable $e Instance of Throwable
      * @param bool $debug Whether to add stack trace, default is false.
-     * @return ResponseInterface
+     * @return \Psr\Http\Message\ResponseInterface
      */
     public static function respond(int $status, \Throwable $e, bool $debug = false): ResponseInterface
     {
@@ -22,7 +23,7 @@ class ErrorHandler
             'body' => json_encode([
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
-                'trace' => $debug ? $e->getTrace() : null
+                'trace' => $debug ? $e->getTrace() : null,
             ]),
         ]);
     }

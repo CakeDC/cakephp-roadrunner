@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 /**
@@ -19,12 +18,12 @@ include $rootDirectory . '/vendor/autoload.php';
 
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\ErrorHandler;
-use Psr\Http\Message\ServerRequestInterface;
-use Spiral\RoadRunner\Http\PSR7Worker;
-use Spiral\RoadRunner\Worker;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\Diactoros\StreamFactory;
 use Laminas\Diactoros\UploadedFileFactory;
+use Psr\Http\Message\ServerRequestInterface;
+use Spiral\RoadRunner\Http\PSR7Worker;
+use Spiral\RoadRunner\Worker;
 
 $bridge = new Bridge($rootDirectory);
 $psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), new StreamFactory(), new UploadedFileFactory());

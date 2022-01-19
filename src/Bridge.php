@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CakeDC\Roadrunner;
 
 use Cake\Core\HttpApplicationInterface;
+use Cake\Core\PluginApplicationInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
@@ -36,17 +37,18 @@ class Bridge
     /**
      * @param string $rootDir Absolute path to your applications root directory without the trailing slash. For example,
      *      if your `composer.json` file is located at `/srv/app/composer.json` then `/srv/app` is your $rootDir.
-     * @param \Cake\Core\HttpApplicationInterface|null $application CakePHP Application instance (e.g. `src/Application`),
-     *      if null then the constructor will attempt creating an instance from `\App\Application`.
+     * @param \Cake\Core\HttpApplicationInterface|\Cake\Core\PluginApplicationInterface|null $application Application
+     * (e.g. `\App\Application`), if null then the constructor will attempt creating an instance.
      * @param \Cake\Http\Server|null $server Server instance, if null then one will be created for you.
      */
     public function __construct(
         private string $rootDir,
-        private ?HttpApplicationInterface $application = null,
+        private HttpApplicationInterface|PluginApplicationInterface|null $application = null,
         private ?Server $server = null
     ) {
         if (str_ends_with($this->rootDir, '/')) {
             $this->rootDir = substr($this->rootDir, 0, -1);
+
         }
         if (!file_exists($this->rootDir)) {
             throw new CakeRoadrunnerException(
@@ -69,11 +71,9 @@ class Bridge
 
         require $configDir . '/requirements.php';
         $this->application->bootstrap();
-        /*
-        if ($this->application instanceof \Cake\Core\PluginApplicationInterface) {
+        if ($this->application instanceof PluginApplicationInterface) {
             $this->application->pluginBootstrap();
         }
-        */
     }
 
     /**
@@ -86,7 +86,9 @@ class Bridge
     {
         $request = $this->convertRequest($request);
         $middleware = $this->application->middleware(new MiddlewareQueue());
-        $middleware = $this->application->pluginMiddleware($middleware);
+        if ($this->application instanceof PluginApplicationInterface) {
+            $middleware = $this->application->pluginMiddleware($middleware);
+        }
 
         $this->server->dispatchEvent('Server.buildMiddleware', ['middleware' => $middleware]);
         //$middleware->add($this->application);
@@ -111,20 +113,28 @@ class Bridge
 
     /**
      * @todo needs documentation
-     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @param \Psr\Http\Message\ServerRequestInterface $request An instance of ServerRequestInterface
      * @return \Psr\Http\Message\ServerRequestInterface
      */
     private function convertRequest(ServerRequestInterface $request): ServerRequestInterface
     {
+        // debug code for analyzing request
+        /*
+        ob_start();
+        var_dump($request);
+        $out = ob_get_contents();
+        file_put_contents('/tmp/request.txt', $out);
+        ob_end_clean();
+        */
         $server = $request->getServerParams();
         $server['REQUEST_TIME'] = time();
         $server['REQUEST_TIME_FLOAT'] = microtime(true);
         $server['REMOTE_ADDR'] = '127.0.0.1';
-        $server['SERVER_PROTOCOL'] = $request->getUri()->getScheme();
         $server['REQUEST_METHOD'] = $request->getMethod();
+        $server['REQUEST_URI'] = $request->getUri()->getPath();
+        $server['SERVER_PROTOCOL'] = $request->getUri()->getScheme();
         $server['SERVER_NAME'] = $request->getUri()->getHost();
         $server['SERVER_PORT'] = $request->getUri()->getPort();
-        $server['REQUEST_URI'] = $request->getUri()->getPath();
 
         $query = $request->getQueryParams();
         $body = $request->getParsedBody();

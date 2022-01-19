@@ -1,5 +1,14 @@
 <?php
+
 declare(strict_types=1);
+
+/**
+ * @todo add note about creating a hardlink to the worker as an option:
+ *
+ * ```console
+ * ln ../cakephp-roadrunner/worker/cakephp-worker.php cakephp-worker.php
+ * ```
+ */
 
 ini_set('display_errors', 'stderr');
 
@@ -10,6 +19,7 @@ include $rootDirectory . '/vendor/autoload.php';
 
 use Cake\Http\Response;
 use CakeDC\Roadrunner\Bridge;
+use CakeDC\Roadrunner\ErrorHandler;
 use Psr\Http\Message\ServerRequestInterface;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
@@ -27,7 +37,7 @@ while (true) {
             break;
         }
     } catch (\Throwable $e) {
-        $psr7->respond(new Response(400, [], get_class($e) . ': ' . $e->getMessage()));
+        $psr7->respond(ErrorHandler::respond(400, $e));
         continue;
     }
 
@@ -35,6 +45,6 @@ while (true) {
         $response = $bridge->handle($request);
         $psr7->respond($response);
     } catch (\Throwable $e) {
-        $psr7->respond(new Response(500, [], get_class($e) . ': ' . $e->getMessage()));
+        $psr7->respond(ErrorHandler::respond(500, $e));
     }
 }

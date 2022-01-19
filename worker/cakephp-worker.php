@@ -10,15 +10,11 @@ include $rootDirectory . '/vendor/autoload.php';
 
 use Cake\Http\Response;
 use CakeDC\Roadrunner\Bridge;
-use CakeDC\Roadrunner\Http\ServerRequestFactory;
-use Nyholm\Psr7\Factory\Psr17Factory;
+use CakeDC\Roadrunner\Psr7WorkerFactory;
 use Psr\Http\Message\ServerRequestInterface;
-use Spiral\RoadRunner\Http\PSR7Worker;
-use Spiral\RoadRunner\Worker;
 
 $bridge = new Bridge($rootDirectory);
-$psrFactory = new Psr17Factory();
-$psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), $psrFactory, $psrFactory);
+$psr7 = Psr7WorkerFactory::create();
 
 while (true) {
     try {

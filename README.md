@@ -16,7 +16,7 @@ manager written in Golang. Using Roadrunner you can replace php-fpm a long with 
 ## Table of Contents
  
 - [Install](#install)
-- [Sessions](#install)
+- [Sessions](#sessions)
 - [Static Assets](#static-assets)
 - [Support](#support)
 

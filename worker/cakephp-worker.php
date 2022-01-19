@@ -27,7 +27,7 @@ while (true) {
             break;
         }
     } catch (\Throwable $e) {
-        $psr7->respond(new Response(400, [], get_class($e) . ': '. $e->getMessage()));
+        $psr7->respond(new Response(400, [], get_class($e) . ': ' . $e->getMessage()));
         continue;
     }
 
@@ -35,6 +35,6 @@ while (true) {
         $response = $bridge->handle($request);
         $psr7->respond($response);
     } catch (\Throwable $e) {
-        $psr7->respond(new Response(500, [],  get_class($e) . ': '. $e->getMessage()));
+        $psr7->respond(new Response(500, [], get_class($e) . ': ' . $e->getMessage()));
     }
 }

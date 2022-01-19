@@ -33,9 +33,9 @@
             "@phpstan"
         ],
         "test": "phpunit --colors=always",
-        "phpcs": "phpcs --colors -p --standard=phpcs.xml src/",
-        "phpcbf": "phpcbf --colors --standard=phpcs.xml src/",
-        "phpstan": "phpstan analyse src/",
+        "phpcs": "phpcs --colors -p --standard=phpcs.xml src/ worker/cakephp-worker.php",
+        "phpcbf": "phpcbf --colors --standard=phpcs.xml src/ worker/cakephp-worker.php",
+        "phpstan": "phpstan analyse src/ worker/cakephp-worker.php",
         "coverage": "phpunit --coverage-html coverage/"
     }
 }

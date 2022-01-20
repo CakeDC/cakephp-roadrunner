@@ -118,14 +118,6 @@ class Bridge
      */
     private function convertRequest(ServerRequestInterface $request): ServerRequestInterface
     {
-        // debug code for analyzing request
-        /*
-        ob_start();
-        var_dump($request);
-        $out = ob_get_contents();
-        file_put_contents('/tmp/request.txt', $out);
-        ob_end_clean();
-        */
         $server = $request->getServerParams();
         $server['REQUEST_TIME'] = time();
         $server['REQUEST_TIME_FLOAT'] = microtime(true);
@@ -136,14 +128,39 @@ class Bridge
         $server['SERVER_NAME'] = $request->getUri()->getHost();
         $server['SERVER_PORT'] = $request->getUri()->getPort();
 
-        $query = $request->getQueryParams();
-        $body = $request->getParsedBody();
-        $cookies = $request->getCookieParams();
-        $files = $request->getUploadedFiles();
-
-        $cakeRequest = ServerRequestFactory::fromGlobals($server, $query, $body, $cookies, $files);
+        $cakeRequest = ServerRequestFactory::fromGlobals(
+            $server,
+            $request->getQueryParams(),
+            null,
+            $request->getCookieParams(),
+            $request->getUploadedFiles()
+        );
         $cakeRequest->trustProxy = true;
+        $body = $request->getBody();
+        $cakeRequest = clone $cakeRequest->withBody($body);
 
         return $cakeRequest;
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @return array|null
+     */
+    private function getParsedBody(ServerRequestInterface $request): ?array
+    {
+        if (in_array($request->getMethod(), ['POST', 'PATCH', 'PUT'])) {
+            if (in_array('application/json', $request->getHeader('Content-Type'))) {
+                $body = $request->getBody();
+                $body->rewind();
+                return json_decode($body->getContents(), true);
+            }
+        }
+
+        $parsedBody = $request->getParsedBody();
+        if ($parsedBody == null) {
+            return $parsedBody;
+        }
+
+        return (array) $parsedBody;
     }
 }

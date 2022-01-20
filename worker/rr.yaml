@@ -15,7 +15,7 @@ http:
     forbid: [ "" ]
     calculate_etag: false
     weak: false
-    allow: [ ".js", ".css", ".eot", ".svg", ".ico", ".tff", ".woff", ".woff2"]
+    allow: [ ".js", ".css", ".eot", ".svg", ".ico", ".tff", ".woff", ".woff2", ".json"]
 
 reload:
   interval: 1s

@@ -29,6 +29,8 @@ return static function (RouteBuilder $routes) {
     $routes->scope('/', function (RouteBuilder $builder) {
         $builder->setExtensions(['json']);
         $builder->connect('/', ['controller' => 'Tests', 'action' => 'index', '_ext' => 'json']);
+        $builder->connect('/write', ['controller' => 'Tests', 'action' => 'write', '_ext' => 'json']);
+        $builder->connect('/delete', ['controller' => 'Tests', 'action' => 'delete', '_ext' => 'json']);
         $builder->fallbacks();
     });
 };

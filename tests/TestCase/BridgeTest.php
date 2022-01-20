@@ -3,10 +3,12 @@
 namespace CakeDC\Roadrunner\Test\TestCase;
 
 use Cake\Core\Configure;
+use Cake\Http\ServerRequestFactory;
 use Cake\TestSuite\TestCase;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Test\ServerRequestHelper;
+use Laminas\Diactoros\StreamFactory;
 
 class BridgeTest extends TestCase
 {
@@ -23,7 +25,7 @@ class BridgeTest extends TestCase
 
     public function test_handle(): void
     {
-        $request = (new ServerRequestHelper())->buildRequest();
+        $request = ServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
         $response = (new Bridge($this->rootDir))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(['hello' => 'world'], json_decode((string) $response->getBody(), true));
@@ -31,10 +33,43 @@ class BridgeTest extends TestCase
 
     public function test_handle_with_trailing_root_directory_slash(): void
     {
-        $request = (new ServerRequestHelper())->buildRequest();
+        $request = ServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
         $response = (new Bridge($this->rootDir . '/'))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(['hello' => 'world'], json_decode((string) $response->getBody(), true));
+    }
+
+    public function test_handle_http_write_methods(): void
+    {
+        foreach (['POST', 'PUT', 'PATCH'] as $method) {
+            $data = ['hello' => $method];
+            $request = ServerRequestFactory::fromGlobals(
+                ServerRequestHelper::defaultServerParams([
+                    'REQUEST_URI' => 'http://localhost:8080/write.json',
+                    'REQUEST_METHOD' => $method,
+                ])
+            );
+
+            $request = $request->withBody((new StreamFactory())->createStream(json_encode($data)));
+            $request = $request->withHeader('Content-Type', 'application/json');
+            $response = (new Bridge($this->rootDir))->handle($request);
+            $this->assertEquals(200, $response->getStatusCode());
+            $this->assertEquals($data, json_decode((string) $response->getBody(), true));
+        }
+    }
+
+    public function test_handle_http_delete_method(): void
+    {
+        $request = ServerRequestFactory::fromGlobals(
+            ServerRequestHelper::defaultServerParams([
+                'REQUEST_URI' => 'http://localhost:8080/delete.json',
+                'REQUEST_METHOD' => 'DELETE',
+            ])
+        );
+
+        $response = (new Bridge($this->rootDir))->handle($request);
+        $this->assertEquals(204, $response->getStatusCode());
+        $this->assertEquals('', (string) $response->getBody());
     }
 
     public function test_construct_throws_exception_when_root_dir_not_found(): void

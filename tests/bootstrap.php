@@ -69,6 +69,19 @@ Configure::write('Session', [
     'defaults' => 'php',
 ]);
 
+Cache::setConfig([
+    '_cake_core_' => [
+        'engine' => 'Array',
+        'prefix' => 'cake_core_',
+        'serialize' => true,
+    ],
+    '_cake_model_' => [
+        'engine' => 'Array',
+        'prefix' => 'cake_model_',
+        'serialize' => true,
+    ],
+]);
+
 Chronos::setTestNow(Chronos::now());
 Security::setSalt('a-long-but-not-random-value');
 

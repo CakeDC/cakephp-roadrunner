@@ -48,7 +48,6 @@ class Bridge
     ) {
         if (str_ends_with($this->rootDir, '/')) {
             $this->rootDir = substr($this->rootDir, 0, -1);
-
         }
         if (!file_exists($this->rootDir)) {
             throw new CakeRoadrunnerException(
@@ -140,27 +139,5 @@ class Bridge
         $cakeRequest = clone $cakeRequest->withBody($body);
 
         return $cakeRequest;
-    }
-
-    /**
-     * @param ServerRequestInterface $request
-     * @return array|null
-     */
-    private function getParsedBody(ServerRequestInterface $request): ?array
-    {
-        if (in_array($request->getMethod(), ['POST', 'PATCH', 'PUT'])) {
-            if (in_array('application/json', $request->getHeader('Content-Type'))) {
-                $body = $request->getBody();
-                $body->rewind();
-                return json_decode($body->getContents(), true);
-            }
-        }
-
-        $parsedBody = $request->getParsedBody();
-        if ($parsedBody == null) {
-            return $parsedBody;
-        }
-
-        return (array) $parsedBody;
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
  * @todo add note about creating a hardlink to the worker as an option:
  *
  * ```console
- * ln ../cakephp-roadrunner/worker/cakephp-worker.php cakephp-worker.php
+ * ln vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php cakephp-worker.php
  * ```
  */
 

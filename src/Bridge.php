@@ -8,6 +8,7 @@ use Cake\Core\PluginApplicationInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
+use Cake\Http\ServerRequest;
 use Cake\Http\ServerRequestFactory;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use Psr\Http\Message\ResponseInterface;
@@ -111,33 +112,26 @@ class Bridge
     }
 
     /**
-     * @todo needs documentation
+     * Convert ServerRequestInterface to Cake ServerRequest. This is necessary since some CakePHP internals and some
+     * plugin middleware require an instance of Cake ServerRequest.
+     *
+     * @todo result of `$request->getParsedBody()` is always null, see link tag below this todo. We rely on
+     *      BodyParserMiddleware after setting the body on the ServerRequest below.
+     * @link https://github.com/roadrunner-server/roadrunner/discussions/953
      * @param \Psr\Http\Message\ServerRequestInterface $request An instance of ServerRequestInterface
-     * @return \Psr\Http\Message\ServerRequestInterface
+     * @return \Cake\Http\ServerRequest
      */
-    private function convertRequest(ServerRequestInterface $request): ServerRequestInterface
+    private function convertRequest(ServerRequestInterface $request): ServerRequest
     {
-        $server = $request->getServerParams();
-        $server['REQUEST_TIME'] = time();
-        $server['REQUEST_TIME_FLOAT'] = microtime(true);
-        $server['REMOTE_ADDR'] = '127.0.0.1';
-        $server['REQUEST_METHOD'] = $request->getMethod();
-        $server['REQUEST_URI'] = $request->getUri()->getPath();
-        $server['SERVER_PROTOCOL'] = $request->getUri()->getScheme();
-        $server['SERVER_NAME'] = $request->getUri()->getHost();
-        $server['SERVER_PORT'] = $request->getUri()->getPort();
-
         $cakeRequest = ServerRequestFactory::fromGlobals(
-            $server,
+            $request->getServerParams(),
             $request->getQueryParams(),
-            null,
+            $request->getParsedBody(),
             $request->getCookieParams(),
             $request->getUploadedFiles()
         );
         $cakeRequest->trustProxy = true;
-        $body = $request->getBody();
-        $cakeRequest = clone $cakeRequest->withBody($body);
 
-        return $cakeRequest;
+        return clone $cakeRequest->withBody($request->getBody());
     }
 }

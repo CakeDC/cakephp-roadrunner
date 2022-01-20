@@ -4,17 +4,8 @@ declare(strict_types=1);
 use Cake\Cache\Cache;
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
-use Cake\Datasource\ConnectionManager;
-use Cake\Log\Log;
 use Cake\Utility\Security;
 
-/**
- * Test suite bootstrap for SwaggerBake.
- *
- * This function is used to find the location of CakePHP whether CakePHP
- * has been installed as a dependency of the plugin, or the plugin is itself
- * installed as a dependency of an application.
- */
 $findRoot = function ($root) {
     do {
         $lastRoot = $root;

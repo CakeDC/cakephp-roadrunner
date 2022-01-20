@@ -35,7 +35,7 @@ while (true) {
             break;
         }
     } catch (\Throwable $e) {
-        $psr7->respond(ErrorHandler::respond(400, $e));
+        $psr7->respond(ErrorHandler::response(400, $e));
         continue;
     }
 
@@ -43,6 +43,6 @@ while (true) {
         $response = $bridge->handle($request);
         $psr7->respond($response);
     } catch (\Throwable $e) {
-        $psr7->respond(ErrorHandler::respond(500, $e));
+        $psr7->respond(ErrorHandler::response(500, $e));
     }
 }

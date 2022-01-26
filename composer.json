@@ -4,12 +4,14 @@
     "type": "cakephp-plugin",
     "license": "MIT",
     "require": {
-        "cakephp/cakephp": "^3.6",
-        "spiral/roadrunner": "^1.3",
-        "relay/middleware": "^1.2"
+        "php": "^8.0",
+        "cakephp/cakephp": "^4.2",
+        "spiral/roadrunner": "^2.7"
     },
     "require-dev": {
-        "phpunit/phpunit": "^5.7|^6.0"
+        "cakephp/cakephp-codesniffer": "^4.2",
+        "phpunit/phpunit": "~8.5.0 || ^9.3",
+        "phpstan/phpstan": "^1.4"
     },
     "autoload": {
         "psr-4": {
@@ -19,7 +21,20 @@
     "autoload-dev": {
         "psr-4": {
             "CakeDC\\Roadrunner\\Test\\": "tests",
+            "App\\": "tests/test_app/src",
             "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
         }
+    },
+    "scripts": {
+        "analyze": [
+            "@test",
+            "@phpcs",
+            "@phpstan"
+        ],
+        "test": "phpunit --colors=always",
+        "phpcs": "phpcs --colors -p --standard=phpcs.xml src/ worker/cakephp-worker.php",
+        "phpcbf": "phpcbf --colors --standard=phpcs.xml src/ worker/cakephp-worker.php",
+        "phpstan": "phpstan analyse src/ worker/cakephp-worker.php",
+        "coverage": "phpunit --coverage-html coverage/"
     }
 }

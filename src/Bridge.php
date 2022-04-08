@@ -104,7 +104,7 @@ class Bridge
             $cookies[] = $cookie->toHeaderValue();
         }
         if (!empty($cookies)) {
-            $response = $response->withHeader('Set-Cookie', $cookies);
+            $response = $response->withAddedHeader('Set-Cookie', $cookies);
         }
 
         session_write_close();

@@ -26,7 +26,7 @@ class Session extends BaseSession
     {
         $canUseCookies = !!ini_get('session.use_cookies') || !!ini_get('session.use_only_cookies');
 
-        return $canUseCookies
+        return !$canUseCookies
             || isset($_COOKIE[session_name()])
             || $this->_isCLI
             || (ini_get('session.use_trans_sid') && isset($_GET[session_name()]));

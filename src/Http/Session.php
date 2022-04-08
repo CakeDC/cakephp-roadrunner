@@ -10,15 +10,25 @@ use Cake\Http\Session as BaseSession;
  */
 class Session extends BaseSession
 {
+    public function __construct(array $config = [])
+    {
+        parent::__construct($config);
+
+        $this->_isCLI = false;
+    }
+
     /**
-     * Override the cli fixed session
+     * Returns whether a session exists
      *
      * @return bool
      */
-    public function start(): bool
+    protected function _hasSession(): bool
     {
-        $this->_isCLI = false;
+        $canUseCookies = !!ini_get('session.use_cookies') || !!ini_get('session.use_only_cookies');
 
-        return parent::start();
+        return $canUseCookies
+            || isset($_COOKIE[session_name()])
+            || $this->_isCLI
+            || (ini_get('session.use_trans_sid') && isset($_GET[session_name()]));
     }
 }

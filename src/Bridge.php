@@ -9,10 +9,11 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
 use Cake\Http\ServerRequest;
-use Cake\Http\ServerRequestFactory;
+use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UriInterface;
 
 /**
  * The CakePHP RoadRunner Bridge converts a request to a PSR response suitable for the RoadRunner server. This should
@@ -84,7 +85,7 @@ class Bridge
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $request = $this->convertRequest($request);
+        $request = static::convertRequest($request);
         $middleware = $this->application->middleware(new MiddlewareQueue());
         if ($this->application instanceof PluginApplicationInterface) {
             $middleware = $this->application->pluginMiddleware($middleware);
@@ -111,6 +112,18 @@ class Bridge
         return $response;
     }
 
+    private static function buildHostHeaderFromUri(UriInterface $uri): string
+    {
+        $shouldIncludePort = ($uri->getScheme() === 'http' && $uri->getPort() !== 80)
+            || ($uri->getScheme() === 'https' && !$uri->getPort() !== 443);
+
+        if ($shouldIncludePort) {
+            return "{$uri->getHost()}:{$uri->getPort()}";
+        } else {
+            return $uri->getHost();
+        }
+    }
+
     /**
      * Convert ServerRequestInterface to Cake ServerRequest. This is necessary since some CakePHP internals and some
      * plugin middleware require an instance of Cake ServerRequest.
@@ -121,7 +134,7 @@ class Bridge
      * @param \Psr\Http\Message\ServerRequestInterface $request An instance of ServerRequestInterface
      * @return \Cake\Http\ServerRequest
      */
-    private function convertRequest(ServerRequestInterface $request): ServerRequest
+    public static function convertRequest(ServerRequestInterface $request): ServerRequest
     {
         $cakeRequest = ServerRequestFactory::fromGlobals(
             $request->getServerParams(),
@@ -131,6 +144,16 @@ class Bridge
             $request->getUploadedFiles()
         );
         $cakeRequest->trustProxy = true;
+
+        // Add the Host header and the HTTP_HOST environment variable to the request.
+        // Those are not added on the request that comes from Roadrunner, so we derive
+        // it from the host in the URI.
+        $host = static::buildHostHeaderFromUri($request->getUri());
+        $cakeRequest = $cakeRequest
+            ->withEnv('HTTP_HOST', $host)
+            ->withHeader('Host', $host);
+
+        $request->getBody()->rewind();
 
         return clone $cakeRequest->withBody($request->getBody());
     }

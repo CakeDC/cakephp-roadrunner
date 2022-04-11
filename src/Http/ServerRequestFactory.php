@@ -49,6 +49,8 @@ class ServerRequestFactory extends BaseServerRequestFactory
             'session' => $session,
         ]);
 
+        $session->setRequestCookies($request->getCookieParams());
+
         return $request;
     }
 }

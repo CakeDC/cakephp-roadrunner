@@ -10,11 +10,18 @@ use Cake\Http\Session as BaseSession;
  */
 class Session extends BaseSession
 {
+    protected array $_requestCookies = [];
+
     public function __construct(array $config = [])
     {
         parent::__construct($config);
 
         $this->_isCLI = false;
+    }
+
+    public function setRequestCookies(array $requestCookies): void
+    {
+        $this->_requestCookies = $requestCookies;
     }
 
     /**
@@ -27,7 +34,7 @@ class Session extends BaseSession
         $canUseCookies = !!ini_get('session.use_cookies') || !!ini_get('session.use_only_cookies');
 
         return !$canUseCookies
-            || isset($_COOKIE[session_name()])
+            || isset($this->_requestCookies[session_name()])
             || $this->_isCLI
             || (ini_get('session.use_trans_sid') && isset($_GET[session_name()]));
     }

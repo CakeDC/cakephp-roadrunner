@@ -141,22 +141,22 @@ class Bridge
      */
     public static function convertRequest(ServerRequestInterface $request): ServerRequest
     {
+        // Add the Host header and the HTTP_HOST environment variable to the request.
+        // Those are not added on the request that comes from Roadrunner, so we derive
+        // it from the host in the URI.
+        $host = static::buildHostHeaderFromUri($request->getUri());
+        $serverParams = $request->getServerParams() + [
+            'HTTP_HOST' => $host,
+        ];
+
         $cakeRequest = ServerRequestFactory::fromGlobals(
-            $request->getServerParams(),
+            $serverParams,
             $request->getQueryParams(),
             $request->getParsedBody(),
             $request->getCookieParams(),
             $request->getUploadedFiles()
         );
         $cakeRequest->trustProxy = true;
-
-        // Add the Host header and the HTTP_HOST environment variable to the request.
-        // Those are not added on the request that comes from Roadrunner, so we derive
-        // it from the host in the URI.
-        $host = static::buildHostHeaderFromUri($request->getUri());
-        $cakeRequest = $cakeRequest
-            ->withEnv('HTTP_HOST', $host)
-            ->withHeader('Host', $host);
 
         $request->getBody()->rewind();
 

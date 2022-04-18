@@ -114,8 +114,13 @@ class Bridge
 
     private static function buildHostHeaderFromUri(UriInterface $uri): string
     {
-        $shouldIncludePort = ($uri->getScheme() === 'http' && $uri->getPort() !== 80)
-            || ($uri->getScheme() === 'https' && !$uri->getPort() !== 443);
+        $uriPort = $uri->getPort();
+        if ($uriPort === null) {
+            return $uri->getHost();
+        }
+
+        $shouldIncludePort = ($uri->getScheme() === 'http' && $uriPort !== 80)
+            || ($uri->getScheme() === 'https' && $uriPort !== 443);
 
         if ($shouldIncludePort) {
             return "{$uri->getHost()}:{$uri->getPort()}";

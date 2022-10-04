@@ -3,12 +3,14 @@
 namespace CakeDC\Roadrunner\Test\TestCase;
 
 use Cake\Core\Configure;
+use Cake\Http\ServerRequest;
 use Cake\Http\ServerRequestFactory;
 use Cake\TestSuite\TestCase;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Test\ServerRequestHelper;
 use Laminas\Diactoros\StreamFactory;
+use Laminas\Diactoros\Uri;
 
 class BridgeTest extends TestCase
 {
@@ -90,5 +92,14 @@ class BridgeTest extends TestCase
         $this->expectException(CakeRoadrunnerException::class);
         $this->expectExceptionMessage(CakeRoadrunnerException::APP_INSTANCE_NOT_CREATED);
         (new Bridge($this->rootDir));
+    }
+
+    public function test_convert_request_adds_host_header_correctly(): void
+    {
+        $request = (new ServerRequest())->withUri(new Uri('http://website.com/test.json'));
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals('website.com', $convertedRequest->getHeaderLine('Host'));
     }
 }

@@ -8,7 +8,7 @@ use Cake\Http\Response;
 class ErrorHandler
 {
     public const TITLE = 'CakeDC Roadrunner Error';
-    
+
     /**
      * Return an error response.
      *

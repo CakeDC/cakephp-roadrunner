@@ -12,6 +12,9 @@ class Session extends BaseSession
 {
     protected array $_requestCookies = [];
 
+    /**
+     * @inheritDoc
+     */
     public function __construct(array $config = [])
     {
         parent::__construct($config);
@@ -19,6 +22,12 @@ class Session extends BaseSession
         $this->_isCLI = false;
     }
 
+    /**
+     * Set the cookies used for this session.
+     *
+     * @param array $requestCookies The request's cookies
+     * @return void
+     */
     public function setRequestCookies(array $requestCookies): void
     {
         $this->_requestCookies = $requestCookies;

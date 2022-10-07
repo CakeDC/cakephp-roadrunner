@@ -10,6 +10,7 @@ use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Test\ServerRequestHelper;
 use Laminas\Diactoros\StreamFactory;
+use Laminas\Diactoros\UploadedFile;
 use Laminas\Diactoros\Uri;
 
 class BridgeTest extends TestCase
@@ -101,5 +102,27 @@ class BridgeTest extends TestCase
         $convertedRequest = Bridge::convertRequest($request);
 
         $this->assertEquals('website.com', $convertedRequest->getHeaderLine('Host'));
+    }
+
+    public function test_convert_request_adds_uploaded_files_to_parsed_body(): void
+    {
+        $stream = (new StreamFactory())->createStream('test contents');
+        $request = (new ServerRequest())->withUploadedFiles([
+            'uploadedFileField' => new UploadedFile(
+                $stream,
+                $stream->getSize(),
+                UPLOAD_ERR_OK,
+                clientFilename: 'test.txt'
+            ),
+        ]);
+
+        $convertedRequest = Bridge::convertRequest($request);
+        $parsedBody = $convertedRequest->getParsedBody();
+
+        $this->assertArrayHasKey('uploadedFileField', $parsedBody);
+
+        $uploadedFile = $parsedBody['uploadedFileField'];
+        $this->assertInstanceOf(UploadedFile::class, $uploadedFile);
+        $this->assertEquals('test.txt', $uploadedFile->getClientFilename());
     }
 }

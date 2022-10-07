@@ -9,8 +9,8 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
 use Cake\Http\ServerRequest;
-use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
+use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
@@ -112,7 +112,13 @@ class Bridge
         return $response;
     }
 
-    private static function buildHostHeaderFromUri(UriInterface $uri): string
+    /**
+     * Generates a host header, based upon the contents from the URI.
+     *
+     * @param \Psr\Http\Message\UriInterface $uri The request's URI
+     * @return string The generated Host header.
+     */
+    protected static function buildHostHeaderFromUri(UriInterface $uri): string
     {
         $uriPort = $uri->getPort();
         if ($uriPort === null) {

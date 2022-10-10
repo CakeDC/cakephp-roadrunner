@@ -125,4 +125,25 @@ class BridgeTest extends TestCase
         $this->assertInstanceOf(UploadedFile::class, $uploadedFile);
         $this->assertEquals('test.txt', $uploadedFile->getClientFilename());
     }
+
+    public function test_convert_request_should_not_attempt_to_parse_request_body_when_is_put_with_urlencoded_parameters(): void
+    {
+        $urlEncodedParameters = [
+            'test' => 123,
+        ];
+
+        // Roadrunner sends the request body encoded with JSON, even when it was originally parsed
+        // from a `application/x-www-form-urlencoded` request
+        $stream = (new StreamFactory())->createStream(json_encode($urlEncodedParameters));
+        $request = (new ServerRequest())
+            ->withMethod('PUT')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')
+            ->withBody($stream)
+            ->withParsedBody($urlEncodedParameters);
+
+        $convertedRequest = Bridge::convertRequest($request);
+        $parsedBody = $convertedRequest->getParsedBody();
+
+        $this->assertEquals($urlEncodedParameters, $parsedBody);
+    }
 }

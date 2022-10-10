@@ -43,6 +43,7 @@ class ServerRequestFactory extends BaseServerRequestFactory
             'uri' => $uri,
             'cookies' => $cookies ?: $_COOKIE,
             'query' => $query ?: $_GET,
+            'post' => $parsedBody ?: $_POST,
             /** @phpstan-ignore-next-line */
             'webroot' => $uri->webroot,
             /** @phpstan-ignore-next-line */
@@ -52,7 +53,6 @@ class ServerRequestFactory extends BaseServerRequestFactory
 
         $session->setRequestCookies($request->getCookieParams());
 
-        $request = static::marshalBodyAndRequestMethod($parsedBody ?? $_POST, $request);
         $request = static::marshalFiles($files ?? $_FILES, $request);
 
         return $request;

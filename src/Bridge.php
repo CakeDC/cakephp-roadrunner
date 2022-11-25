@@ -164,8 +164,30 @@ class Bridge
         );
         $cakeRequest->trustProxy = true;
 
+        $cakeRequest = static::copyHeadersFromRoadrunnerRequest($cakeRequest, $request);
+
         $request->getBody()->rewind();
 
         return clone $cakeRequest->withBody($request->getBody());
+    }
+
+    /**
+     * Copies the headers from the original request (originated from Roadrunner) to our
+     * converted request. This is needed because, otherwise, headers are parsed from the `$request->getServerParams()`
+     * contents, and in those duplicated headers are concatenated into a single comma-separated one.
+     *
+     * @param \Cake\Http\ServerRequest $convertedRequest Our converted request
+     * @param \Laminas\Diactoros\ServerRequest $roadrunnerRequest The original request
+     * @return \Cake\Http\ServerRequest
+     */
+    protected static function copyHeadersFromRoadrunnerRequest(
+        CakeServerRequest $convertedRequest,
+        LaminasServerRequest $roadrunnerRequest
+    ): CakeServerRequest {
+        foreach ($roadrunnerRequest->getHeaders() as $headerName => $headerValue) {
+            $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue);
+        }
+
+        return $convertedRequest;
     }
 }

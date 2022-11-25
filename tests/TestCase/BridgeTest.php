@@ -148,4 +148,22 @@ class BridgeTest extends TestCase
 
         $this->assertEquals($urlEncodedParameters, $parsedBody);
     }
+
+    public function test_convert_request_should_keep_headers_as_list_when_request_has_duplicated_headers(): void
+    {
+        $expectedHeaderValues = ['123', '456'];
+
+        // A request que vem do Roadrunner contém tanto o header nos server params (que representa
+        // os conteudos da global $_SERVER), quanto os headers adicionados pelo `withHeader`/`withAddedHeader`
+        $serverParams = [
+            'HTTP_X_TEST_HEADER' => '123, 456',
+        ];
+        $request = (new LaminasServerRequest($serverParams))
+            ->withHeader('X-Test-Header', '123')
+            ->withAddedHeader('X-Test-Header', '456');
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals($expectedHeaderValues, $convertedRequest->getHeader('X-Test-Header'));
+    }
 }

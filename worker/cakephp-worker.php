@@ -18,10 +18,10 @@ include $rootDirectory . '/vendor/autoload.php';
 
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\ErrorHandler;
+use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\Diactoros\StreamFactory;
 use Laminas\Diactoros\UploadedFileFactory;
-use Psr\Http\Message\ServerRequestInterface;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 
@@ -31,7 +31,7 @@ $psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), new StreamF
 while (true) {
     try {
         $request = $psr7->waitRequest();
-        if (!$request instanceof ServerRequestInterface) { // Termination request received
+        if (!$request instanceof ServerRequest) { // Termination request received
             break;
         }
     } catch (\Throwable $e) {

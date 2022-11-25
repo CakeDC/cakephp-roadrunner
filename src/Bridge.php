@@ -8,11 +8,11 @@ use Cake\Core\PluginApplicationInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
-use Cake\Http\ServerRequest;
+use Cake\Http\ServerRequest as CakeServerRequest;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Http\ServerRequestFactory;
+use Laminas\Diactoros\ServerRequest as LaminasServerRequest;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -80,10 +80,10 @@ class Bridge
     /**
      * Handle the request and return a response.
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request PSR Server Request Interface
+     * @param \Laminas\Diactoros\ServerRequest $request Server Request
      * @return \Psr\Http\Message\ResponseInterface
      */
-    public function handle(ServerRequestInterface $request): ResponseInterface
+    public function handle(LaminasServerRequest $request): ResponseInterface
     {
         $request = static::convertRequest($request);
         $middleware = $this->application->middleware(new MiddlewareQueue());
@@ -142,10 +142,10 @@ class Bridge
      * @todo result of `$request->getParsedBody()` is always null, see link tag below this todo. We rely on
      *      BodyParserMiddleware after setting the body on the ServerRequest below.
      * @link https://github.com/roadrunner-server/roadrunner/discussions/953
-     * @param \Psr\Http\Message\ServerRequestInterface $request An instance of ServerRequestInterface
+     * @param \Laminas\Diactoros\ServerRequest $request An instance of Laminas's ServerRequest
      * @return \Cake\Http\ServerRequest
      */
-    public static function convertRequest(ServerRequestInterface $request): ServerRequest
+    public static function convertRequest(LaminasServerRequest $request): CakeServerRequest
     {
         // Add the Host header and the HTTP_HOST environment variable to the request.
         // Those are not added on the request that comes from Roadrunner, so we derive

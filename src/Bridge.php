@@ -165,6 +165,7 @@ class Bridge
         $cakeRequest->trustProxy = true;
 
         $cakeRequest = static::copyHeadersFromRoadrunnerRequest($cakeRequest, $request);
+        $cakeRequest = $cakeRequest->withUri($request->getUri());
 
         $request->getBody()->rewind();
 

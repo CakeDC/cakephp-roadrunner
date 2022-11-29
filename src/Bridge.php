@@ -185,7 +185,15 @@ class Bridge
         LaminasServerRequest $roadrunnerRequest
     ): CakeServerRequest {
         foreach ($roadrunnerRequest->getHeaders() as $headerName => $headerValue) {
-            $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue);
+            // This is needed because internally CakePHP stores headers in the same place as
+            // the request's environment variables, and when we call `withHeader` with an array parameter
+            // this environment variable contents (retrieved by calling `$request->getEnv()`) change from
+            // a string to an array.
+            if (count($headerValue) === 1) {
+                $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue[0]);
+            } else {
+                $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue);
+            }
         }
 
         return $convertedRequest;

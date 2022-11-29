@@ -166,4 +166,18 @@ class BridgeTest extends TestCase
 
         $this->assertEquals($expectedHeaderValues, $convertedRequest->getHeader('X-Test-Header'));
     }
+
+    public function test_convert_request_should_keep_environment_values_as_string_when_header_is_present_only_one_time(): void {
+        $expectedEnvironmentValue = '192.168.0.1';
+
+        $serverParams = [
+            'HTTP_X_REAL_IP' => '192.168.0.1',
+        ];
+        $request = (new LaminasServerRequest($serverParams))
+            ->withHeader('X-Real-IP', '192.168.0.1');
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals($expectedEnvironmentValue, $convertedRequest->getEnv('HTTP_X_REAL_IP'));
+    }
 }

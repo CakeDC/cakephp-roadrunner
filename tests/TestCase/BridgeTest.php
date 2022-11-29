@@ -3,12 +3,13 @@
 namespace CakeDC\Roadrunner\Test\TestCase;
 
 use Cake\Core\Configure;
-use Cake\Http\ServerRequest;
-use Cake\Http\ServerRequestFactory;
+use Cake\Http\ServerRequest as CakeServerRequest;
 use Cake\TestSuite\TestCase;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Test\ServerRequestHelper;
+use Laminas\Diactoros\ServerRequest as LaminasServerRequest;
+use Laminas\Diactoros\ServerRequestFactory as LaminasServerRequestFactory;
 use Laminas\Diactoros\StreamFactory;
 use Laminas\Diactoros\UploadedFile;
 use Laminas\Diactoros\Uri;
@@ -28,7 +29,7 @@ class BridgeTest extends TestCase
 
     public function test_handle(): void
     {
-        $request = ServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
+        $request = LaminasServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
         $response = (new Bridge($this->rootDir))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(['hello' => 'world'], json_decode((string) $response->getBody(), true));
@@ -36,7 +37,7 @@ class BridgeTest extends TestCase
 
     public function test_handle_with_trailing_root_directory_slash(): void
     {
-        $request = ServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
+        $request = LaminasServerRequestFactory::fromGlobals(ServerRequestHelper::defaultServerParams());
         $response = (new Bridge($this->rootDir . '/'))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(['hello' => 'world'], json_decode((string) $response->getBody(), true));
@@ -46,8 +47,9 @@ class BridgeTest extends TestCase
     {
         foreach (['POST', 'PUT', 'PATCH'] as $method) {
             $data = ['hello' => $method];
-            $request = ServerRequestFactory::fromGlobals(
+            $request = LaminasServerRequestFactory::fromGlobals(
                 ServerRequestHelper::defaultServerParams([
+                    'CONTENT_TYPE' => 'application/json',
                     'REQUEST_URI' => 'http://localhost:8080/write.json',
                     'REQUEST_METHOD' => $method,
                 ])
@@ -63,7 +65,7 @@ class BridgeTest extends TestCase
 
     public function test_handle_http_delete_method(): void
     {
-        $request = ServerRequestFactory::fromGlobals(
+        $request = LaminasServerRequestFactory::fromGlobals(
             ServerRequestHelper::defaultServerParams([
                 'REQUEST_URI' => 'http://localhost:8080/delete.json',
                 'REQUEST_METHOD' => 'DELETE',
@@ -97,7 +99,7 @@ class BridgeTest extends TestCase
 
     public function test_convert_request_adds_host_header_correctly(): void
     {
-        $request = (new ServerRequest())->withUri(new Uri('http://website.com/test.json'));
+        $request = (new LaminasServerRequest())->withUri(new Uri('http://website.com/test.json'));
 
         $convertedRequest = Bridge::convertRequest($request);
 
@@ -107,7 +109,7 @@ class BridgeTest extends TestCase
     public function test_convert_request_adds_uploaded_files_to_parsed_body(): void
     {
         $stream = (new StreamFactory())->createStream('test contents');
-        $request = (new ServerRequest())->withUploadedFiles([
+        $request = (new LaminasServerRequest())->withUploadedFiles([
             'uploadedFileField' => new UploadedFile(
                 $stream,
                 $stream->getSize(),
@@ -135,7 +137,7 @@ class BridgeTest extends TestCase
         // Roadrunner sends the request body encoded with JSON, even when it was originally parsed
         // from a `application/x-www-form-urlencoded` request
         $stream = (new StreamFactory())->createStream(json_encode($urlEncodedParameters));
-        $request = (new ServerRequest())
+        $request = (new LaminasServerRequest())
             ->withMethod('PUT')
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')
             ->withBody($stream)
@@ -145,5 +147,37 @@ class BridgeTest extends TestCase
         $parsedBody = $convertedRequest->getParsedBody();
 
         $this->assertEquals($urlEncodedParameters, $parsedBody);
+    }
+
+    public function test_convert_request_should_keep_headers_as_list_when_request_has_duplicated_headers(): void
+    {
+        $expectedHeaderValues = ['123', '456'];
+
+        // A request que vem do Roadrunner contém tanto o header nos server params (que representa
+        // os conteudos da global $_SERVER), quanto os headers adicionados pelo `withHeader`/`withAddedHeader`
+        $serverParams = [
+            'HTTP_X_TEST_HEADER' => '123, 456',
+        ];
+        $request = (new LaminasServerRequest($serverParams))
+            ->withHeader('X-Test-Header', '123')
+            ->withAddedHeader('X-Test-Header', '456');
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals($expectedHeaderValues, $convertedRequest->getHeader('X-Test-Header'));
+    }
+
+    public function test_convert_request_should_keep_environment_values_as_string_when_header_is_present_only_one_time(): void {
+        $expectedEnvironmentValue = '192.168.0.1';
+
+        $serverParams = [
+            'HTTP_X_REAL_IP' => '192.168.0.1',
+        ];
+        $request = (new LaminasServerRequest($serverParams))
+            ->withHeader('X-Real-IP', '192.168.0.1');
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals($expectedEnvironmentValue, $convertedRequest->getEnv('HTTP_X_REAL_IP'));
     }
 }

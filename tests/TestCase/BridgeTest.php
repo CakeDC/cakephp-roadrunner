@@ -180,4 +180,22 @@ class BridgeTest extends TestCase
 
         $this->assertEquals($expectedEnvironmentValue, $convertedRequest->getEnv('HTTP_X_REAL_IP'));
     }
+
+    public function test_convert_request_should_keep_uri_parameters(): void
+    {
+        $serverParams = [
+            'REQUEST_URI' => 'http://localhost/test?parameter=1',
+        ];
+
+        $requestUri = new Uri('http://localhost/test?parameter=1');
+        $request = (new LaminasServerRequest($serverParams))
+            ->withUri($requestUri);
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals('http', $convertedRequest->getUri()->getScheme());
+        $this->assertEquals('localhost', $convertedRequest->getUri()->getHost());
+        $this->assertEquals('parameter=1', $convertedRequest->getUri()->getQuery());
+        $this->assertEquals('/test?parameter=1', $convertedRequest->getRequestTarget());
+    }
 }

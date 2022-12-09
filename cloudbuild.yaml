@@ -1,0 +1,19 @@
+steps:
+  - id: Install dependencies
+    name: nixos/nix:2.3
+    entrypoint: nix-shell
+    args:
+      - --run
+      - composer install
+
+  - id: Run linter, static analysis and tests
+    name: nixos/nix:2.3
+    entrypoint: nix-shell
+    args:
+      - --run
+      - composer analyze
+
+options:
+  volumes:
+    - name: nix-store
+      path: /nix

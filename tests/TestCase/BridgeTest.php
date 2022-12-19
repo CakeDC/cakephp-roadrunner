@@ -198,4 +198,27 @@ class BridgeTest extends TestCase
         $this->assertEquals('parameter=1', $convertedRequest->getUri()->getQuery());
         $this->assertEquals('/test?parameter=1', $convertedRequest->getRequestTarget());
     }
+
+    /** @dataProvider provide_test_values_for_basic_authentication_test */
+    public function test_convert_request_should_parse_basic_authorization_into_php_environment_variables(
+        string $username,
+        string $password,
+    ): void {
+        $encodedBasicParameter = base64_encode("$username:$password");
+        $headerValue = "Basic $encodedBasicParameter";
+
+        $request = (new LaminasServerRequest())
+            ->withHeader('Authorization', $headerValue);
+
+        $convertedRequest = Bridge::convertRequest($request);
+
+        $this->assertEquals($username, $convertedRequest->getEnv('PHP_AUTH_USER'));
+        $this->assertEquals($password, $convertedRequest->getEnv('PHP_AUTH_PW'));
+    }
+
+    public function provide_test_values_for_basic_authentication_test(): iterable
+    {
+        yield 'with username and empty password' => ['test_username', ''];
+        yield 'with username and non-empty password' => ['test_username', 'test_password'];
+    }
 }

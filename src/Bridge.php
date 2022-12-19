@@ -165,6 +165,7 @@ class Bridge
         $cakeRequest->trustProxy = true;
 
         $cakeRequest = static::copyHeadersFromRoadrunnerRequest($cakeRequest, $request);
+        $cakeRequest = static::parseBasicAuthenticationIntoRequestEnvironment($cakeRequest);
         $cakeRequest = $cakeRequest->withUri($request->getUri());
 
         $request->getBody()->rewind();
@@ -198,5 +199,38 @@ class Bridge
         }
 
         return $convertedRequest;
+    }
+
+    /**
+     * If they're present, parses basic authentication info from the request headers into the
+     * `PHP_AUTH_USER` and `PHP_AUTH_PW` request environment variables.
+     *
+     * @param \Cake\Http\ServerRequest $request The request with the data to be parsed
+     * @return \Cake\Http\ServerRequest
+     */
+    protected static function parseBasicAuthenticationIntoRequestEnvironment(
+        CakeServerRequest $request
+    ): CakeServerRequest {
+        $authorizationHeader = $request->getHeader('Authorization')[0] ?? null;
+        if ($authorizationHeader === null) {
+            return $request;
+        }
+
+        $matches = [];
+        $matched = preg_match('/Basic\s+(.*)$/i', $authorizationHeader, $matches);
+        if (!$matched) {
+            return $request;
+        }
+
+        $decodedParameter = base64_decode($matches[1], true);
+        if (!$decodedParameter) {
+            return $request;
+        }
+
+        $parts = explode(':', $decodedParameter, 2);
+
+        return $request
+            ->withEnv('PHP_AUTH_USER', $parts[0])
+            ->withEnv('PHP_AUTH_PW', $parts[1] ?? '');
     }
 }

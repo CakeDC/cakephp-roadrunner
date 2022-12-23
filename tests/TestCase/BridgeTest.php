@@ -3,7 +3,6 @@
 namespace CakeDC\Roadrunner\Test\TestCase;
 
 use Cake\Core\Configure;
-use Cake\Http\ServerRequest as CakeServerRequest;
 use Cake\TestSuite\TestCase;
 use CakeDC\Roadrunner\Bridge;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
@@ -24,6 +23,7 @@ class BridgeTest extends TestCase
         Configure::write('Error', []);
         Configure::write('debug', true);
         Configure::write('App.namespace', 'App\\');
+        Configure::write('App.fullBaseUrl', 'http://localhost:8080');
         $this->rootDir = dirname(__DIR__ . '../') . '/test_app';
     }
 
@@ -75,6 +75,20 @@ class BridgeTest extends TestCase
         $response = (new Bridge($this->rootDir))->handle($request);
         $this->assertEquals(204, $response->getStatusCode());
         $this->assertEquals('', (string) $response->getBody());
+    }
+
+    public function test_handle_with_redirect_exception(): void
+    {
+        $request = LaminasServerRequestFactory::fromGlobals(
+            ServerRequestHelper::defaultServerParams([
+                'REQUEST_URI' => 'http://localhost:8080/test_redirect_exception.json',
+                'REQUEST_METHOD' => 'GET',
+            ])
+        );
+
+        $response = (new Bridge($this->rootDir))->handle($request);
+        $this->assertEquals(302, $response->getStatusCode());
+        $this->assertEquals('http://localhost:8080/redirected_location.json', $response->getHeaderLine('Location'));
     }
 
     public function test_construct_throws_exception_when_root_dir_not_found(): void

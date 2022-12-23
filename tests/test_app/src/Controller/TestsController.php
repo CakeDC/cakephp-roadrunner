@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 
+use Cake\Http\Exception\RedirectException;
+use Cake\Routing\Router;
+
 class TestsController extends AppController
 {
     public function initialize() : void
@@ -31,5 +34,10 @@ class TestsController extends AppController
     {
         $this->request->allowMethod('DELETE');
         return $this->response->withStatus(204);
+    }
+
+    public function testRedirectException()
+    {
+        throw new RedirectException(Router::url('/redirected_location.json', full: true));
     }
 }

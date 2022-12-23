@@ -31,6 +31,7 @@ return static function (RouteBuilder $routes) {
         $builder->connect('/', ['controller' => 'Tests', 'action' => 'index', '_ext' => 'json']);
         $builder->connect('/write', ['controller' => 'Tests', 'action' => 'write', '_ext' => 'json']);
         $builder->connect('/delete', ['controller' => 'Tests', 'action' => 'delete', '_ext' => 'json']);
+        $builder->connect('/test_redirect_exception', ['controller' => 'Tests', 'action' => 'test_redirect_exception', '_ext' => 'json']);
         $builder->fallbacks();
     });
 };

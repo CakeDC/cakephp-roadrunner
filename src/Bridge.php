@@ -9,6 +9,7 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Http\Runner;
 use Cake\Http\Server;
 use Cake\Http\ServerRequest as CakeServerRequest;
+use Cake\Http\Response as CakeResponse;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use Laminas\Diactoros\ServerRequest as LaminasServerRequest;
@@ -92,9 +93,29 @@ class Bridge
         }
 
         $this->server->dispatchEvent('Server.buildMiddleware', ['middleware' => $middleware]);
-        //$middleware->add($this->application);
-        /** @var \Cake\Http\Response $response */
         $response = (new Runner())->run($middleware, $request, $this->application);
+
+        $cookies = $this->tryToGetCookiesFromResponse($response);
+        if (!empty($cookies)) {
+            $response = $response->withAddedHeader('Set-Cookie', $cookies);
+        }
+
+        session_write_close();
+
+        return $response;
+    }
+
+    /**
+     * Returns a list of cookie header values, suitable for usage with the `Set-Cookie` header.
+     *
+     * @param ResponseInterface $response The response to look for cookies
+     * @return array
+     */
+    private function tryToGetCookiesFromResponse(ResponseInterface $response): array
+    {
+        if (!($response instanceof CakeResponse)) {
+            return [];
+        }
 
         $cookies = [];
         foreach ($response->getCookieCollection() as $cookie) {
@@ -103,13 +124,8 @@ class Bridge
             }
             $cookies[] = $cookie->toHeaderValue();
         }
-        if (!empty($cookies)) {
-            $response = $response->withAddedHeader('Set-Cookie', $cookies);
-        }
 
-        session_write_close();
-
-        return $response;
+        return $cookies;
     }
 
     /**

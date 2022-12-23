@@ -6,10 +6,10 @@ namespace CakeDC\Roadrunner;
 use Cake\Core\HttpApplicationInterface;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Http\MiddlewareQueue;
+use Cake\Http\Response as CakeResponse;
 use Cake\Http\Runner;
 use Cake\Http\Server;
 use Cake\Http\ServerRequest as CakeServerRequest;
-use Cake\Http\Response as CakeResponse;
 use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Http\ServerRequestFactory;
 use Laminas\Diactoros\ServerRequest as LaminasServerRequest;
@@ -108,7 +108,7 @@ class Bridge
     /**
      * Returns a list of cookie header values, suitable for usage with the `Set-Cookie` header.
      *
-     * @param ResponseInterface $response The response to look for cookies
+     * @param \Psr\Http\Message\ResponseInterface $response The response to look for cookies
      * @return array
      */
     private function tryToGetCookiesFromResponse(ResponseInterface $response): array

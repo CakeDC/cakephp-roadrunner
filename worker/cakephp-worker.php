@@ -1,12 +1,48 @@
 <?php
-require __DIR__ . "/vendor/autoload.php";
-$bridge = new \CakeDC\Roadrunner\Bridge(__DIR__);
-$bridge->bootstrap(null, null, null);
-$relay = new \Spiral\Goridge\StreamRelay(STDIN, STDOUT);
-$psr7 = new \Spiral\RoadRunner\PSR7Client(new \Spiral\RoadRunner\Worker($relay));
+declare(strict_types=1);
 
-while ($req = $psr7->acceptRequest()) {
-//     \CakeDC\Api\Service\ServiceRegistry::getServiceLocator()->clear(); // reset API cache if you're using CakeDC/Api plugin
-    $psr7response = $bridge->handle($req);
-    $psr7->respond($psr7response);
+/**
+ * @todo add note about creating a hardlink to the worker as an option:
+ *
+ * ```console
+ * ln vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php cakephp-worker.php
+ * ```
+ */
+
+ini_set('display_errors', 'stderr');
+
+// You may need to change the `$rootDirectory` depending on where you've copied this file. This sample assumes the
+// worker is in the same location as your `vendor` directory.
+$rootDirectory = __DIR__;
+include $rootDirectory . '/vendor/autoload.php';
+
+use CakeDC\Roadrunner\Bridge;
+use CakeDC\Roadrunner\ErrorHandler;
+use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\StreamFactory;
+use Laminas\Diactoros\UploadedFileFactory;
+use Spiral\RoadRunner\Http\PSR7Worker;
+use Spiral\RoadRunner\Worker;
+
+$bridge = new Bridge($rootDirectory);
+$psr7 = new PSR7Worker(Worker::create(), new ServerRequestFactory(), new StreamFactory(), new UploadedFileFactory());
+
+while (true) {
+    try {
+        $request = $psr7->waitRequest();
+        if (!$request instanceof ServerRequest) { // Termination request received
+            break;
+        }
+    } catch (\Throwable $e) {
+        $psr7->respond(ErrorHandler::response(400, $e));
+        continue;
+    }
+
+    try {
+        $response = $bridge->handle($request);
+        $psr7->respond($response);
+    } catch (\Throwable $e) {
+        $psr7->respond(ErrorHandler::response(500, $e));
+    }
 }

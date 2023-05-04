@@ -1,9 +1,5 @@
 # Roadrunner for CakePHP
 
-[![Downloads](https://poser.pugx.org/cakedc/cakephp-roadrunner/d/total.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
-[![Latest Version](https://poser.pugx.org/cakedc/cakephp-roadrunner/v/stable.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
-[![License](https://poser.pugx.org/cakedc/cakephp-roadrunner/license.svg)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
-
 [RoadRunner](https://roadrunner.dev/) is a high-performance PHP application server, load-balancer, and process 
 manager written in Golang. Using Roadrunner you can replace php-fpm a long with nginx or apache.
 
@@ -11,14 +7,13 @@ manager written in Golang. Using Roadrunner you can replace php-fpm a long with 
 
 * CakePHP ^4.3
 * PHP ^8.0
-* Roadrunner 2.7
+* Roadrunner 2.12
 
 ## Table of Contents
  
 - [Install](#install)
 - [Sessions](#sessions)
 - [Static Assets](#static-assets)
-- [Support](#support)
 
 ## Install
 
@@ -39,7 +34,7 @@ filesystem, for example under `/usr/local/bin/rr` or `/usr/bin/rr`.
 If your project uses Docker you can easily add the binary to your Dockerfile:
 
 ```dockerfile
-FROM spiralscout/roadrunner:2.7 as roadrunner
+FROM spiralscout/roadrunner:2.12 as roadrunner
 COPY --from=roadrunner /usr/bin/rr /usr/bin/rr
 ```
 
@@ -123,28 +118,3 @@ server {
 
 Roadrunner also supports [serving static assets](https://roadrunner.dev/docs/http-static) natively. Check the 
 [worker/rr.yaml](worker/rr.yaml) file that ships with this project for an example.
-
-## Support
-
-For bugs and feature requests, please use the [issues](https://github.com/cakedc/cakephp-roadrunner/issues) section 
-of this repository.
-
-Commercial support is also available, [contact us](https://www.cakedc.com/contact) for more information.
-
-## Contributing
-
-This repository follows the [CakeDC Plugin Standard](https://www.cakedc.com/plugin-standard). If you'd like to 
-contribute new features, enhancements or bug fixes to the plugin, please read our 
-[Contribution Guidelines](https://www.cakedc.com/contribution-guidelines) for detailed instructions.
-
-## License
-
-Copyright 2019 Cake Development Corporation (CakeDC). All rights reserved.
-
-Licensed under the [MIT](http://www.opensource.org/licenses/mit-license.php) License. Redistributions of the source 
-code included in this repository must retain the copyright notice found in each file.
-
-## Todo
-
-* Existing issue setting cookies like $this->response = $this->response->withHeader('head', 'one'); conflicts with 
-session cookie generation

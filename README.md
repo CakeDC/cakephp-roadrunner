@@ -5,9 +5,9 @@ manager written in Golang. Using Roadrunner you can replace php-fpm a long with 
 
 ## Requirements
 
-* CakePHP ^4.3
-* PHP ^8.0
-* Roadrunner 2.12
+* CakePHP ^4.4
+* PHP ^8.1
+* Roadrunner ^2023.1.4
 
 ## Table of Contents
  

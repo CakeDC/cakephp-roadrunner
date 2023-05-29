@@ -4,10 +4,11 @@
     "type": "cakephp-plugin",
     "license": "MIT",
     "require": {
-        "php": "^8.0",
-        "cakephp/cakephp": "^4.2",
-        "spiral/roadrunner": "^2.12.2",
-        "laminas/laminas-diactoros": "^2.21"
+        "php": "^8.1",
+        "cakephp/cakephp": "^4.4",
+        "spiral/roadrunner": "^2023.1.4",
+        "laminas/laminas-diactoros": "^2.21",
+        "spiral/roadrunner-http": "^3.0.1"
     },
     "require-dev": {
         "cakephp/cakephp-codesniffer": "^4.2",
@@ -37,5 +38,10 @@
         "phpcbf": "phpcbf --colors --standard=phpcs.xml src/ worker/cakephp-worker.php",
         "phpstan": "phpstan analyse src/ worker/cakephp-worker.php",
         "coverage": "phpunit --coverage-html coverage/"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

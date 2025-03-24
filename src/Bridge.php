@@ -1,90 +1,103 @@
 <?php
+declare(strict_types=1);
+
 namespace CakeDC\Roadrunner;
 
-use Cake\Http\Cookie\Cookie;
+use Cake\Core\HttpApplicationInterface;
+use Cake\Core\PluginApplicationInterface;
+use Cake\Http\MiddlewareQueue;
+use Cake\Http\Response as CakeResponse;
+use Cake\Http\Runner;
+use Cake\Http\Server;
+use Cake\Http\ServerRequest as CakeServerRequest;
+use CakeDC\Roadrunner\Exception\CakeRoadrunnerException;
 use CakeDC\Roadrunner\Http\ServerRequestFactory;
+use Laminas\Diactoros\ServerRequest as LaminasServerRequest;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 
+/**
+ * The CakePHP RoadRunner Bridge converts a request to a PSR response suitable for the RoadRunner server. This should
+ * be called from your worker file.
+ *
+ * Example:
+ *
+ * ```php
+ * # worker/cakephp-worker.php
+ * $bridge = new Bridge(__DIR__);
+ * ```
+ *
+ * When a request is ready to be handled in your worker:
+ *
+ * ```php
+ * return $bridge->handle($request);
+ * ```
+ *
+ * @link https://roadrunner.dev/docs/php-worker
+ */
 class Bridge
 {
     /**
-     * @var Server
+     * @param string $rootDir Absolute path to your applications root directory without the trailing slash. For example,
+     *      if your `composer.json` file is located at `/srv/app/composer.json` then `/srv/app` is your $rootDir.
+     * @param \Cake\Core\HttpApplicationInterface|\Cake\Core\PluginApplicationInterface|null $application Application
+     * (e.g. `\App\Application`), if null then the constructor will attempt creating an instance.
+     * @param \Cake\Http\Server|null $server Server instance, if null then one will be created for you.
      */
-    protected $server;
-
-    /**
-     * @var string root path
-     */
-    protected $root;
-
-    public function __construct($root = null)
-    {
-        $this->root = $root;
-        if ($root === null) {
-            $this->root = dirname(__DIR__, 4);
+    public function __construct(
+        private string $rootDir,
+        private HttpApplicationInterface|PluginApplicationInterface|null $application = null,
+        private ?Server $server = null
+    ) {
+        if (str_ends_with($this->rootDir, '/')) {
+            $this->rootDir = substr($this->rootDir, 0, -1);
         }
-    }
+        if (!file_exists($this->rootDir)) {
+            throw new CakeRoadrunnerException(
+                sprintf(
+                    CakeRoadrunnerException::ROOT_DIR_NOT_FOUND,
+                    $this->rootDir
+                )
+            );
+        }
 
-    /**
-     * Bootstrap an application
-     *
-     * @param string|null $appBootstrap The environment your application will use to bootstrap (if any)
-     * @param string $appenv
-     * @param bool $debug If debug is enabled
-     */
-    public function bootstrap($appBootstrap, $appenv, $debug)
-    {
-        require $this->root . '/config/requirements.php';
-        require $this->root . '/vendor/autoload.php';
-        $this->application = new \App\Application($this->root . '/config');
+        $configDir = "$this->rootDir/config";
+
+        if ($this->application == null && class_exists('\App\Application')) {
+            $this->application = new \App\Application($configDir);
+        } else {
+            throw new CakeRoadrunnerException(CakeRoadrunnerException::APP_INSTANCE_NOT_CREATED);
+        }
+
+        $this->server = $server ?? new Server($this->application);
+
+        require $configDir . '/requirements.php';
         $this->application->bootstrap();
-
-        if ($this->application instanceof \Cake\Core\PluginApplicationInterface) {
+        if ($this->application instanceof PluginApplicationInterface) {
             $this->application->pluginBootstrap();
         }
-        $this->server = new \Cake\Http\Server($this->application);
     }
 
     /**
      * Handle the request and return a response.
      *
-     * @param ServerRequestInterface $request
-     *
-     * @return ResponseInterface
+     * @param \Laminas\Diactoros\ServerRequest $request Server Request
+     * @return \Psr\Http\Message\ResponseInterface
      */
-    public function handle(\Psr\Http\Message\ServerRequestInterface $request)
+    public function handle(LaminasServerRequest $request): ResponseInterface
     {
-        $response = new \Cake\Http\Response();
-        $request = $this->convertRequest($request);
-        $middleware = $this->application->middleware(new \Cake\Http\MiddlewareQueue());
-        if ($this->application instanceof \Cake\Core\PluginApplicationInterface) {
+        $request = static::convertRequest($request);
+        $middleware = $this->application->middleware(new MiddlewareQueue());
+        if ($this->application instanceof PluginApplicationInterface) {
             $middleware = $this->application->pluginMiddleware($middleware);
         }
 
-        if (!($middleware instanceof \Cake\Http\MiddlewareQueue)) {
-            throw new \RuntimeException('The application `middleware` method did not return a middleware queue.');
-        }
         $this->server->dispatchEvent('Server.buildMiddleware', ['middleware' => $middleware]);
-        $middleware->add($this->application);
-        $runner = new \Cake\Http\Runner();
-        $response = $runner->run($middleware, $request, $response);
-        $cookies = [];
-        foreach ($response->getCookieCollection() as $cookie) {
-            /**
-             * @var Cookie $cookie
-             */
-            if ($cookie->getExpiresTimestamp() === '0') {
-                $cookie = $cookie->withNeverExpire();
-            }
-            $cookies[] = $cookie->toHeaderValue();
-        }
+        $response = (new Runner())->run($middleware, $request, $this->application);
+
+        $cookies = $this->tryToGetCookiesFromResponse($response);
         if (!empty($cookies)) {
-            $response = $response->withHeader('Set-Cookie', $cookies);
-        }
-        if (!($response instanceof \Psr\Http\Message\ResponseInterface)) {
-            throw new \RuntimeException(sprintf(
-                'Application did not create a response. Got "%s" instead.',
-                is_object($response) ? get_class($response) : $response
-            ));
+            $response = $response->withAddedHeader('Set-Cookie', $cookies);
         }
 
         session_write_close();
@@ -92,26 +105,148 @@ class Bridge
         return $response;
     }
 
-    protected function convertRequest(\Zend\Diactoros\ServerRequest $request) : \Cake\Http\ServerRequest
+    /**
+     * Returns a list of cookie header values, suitable for usage with the `Set-Cookie` header.
+     *
+     * @param \Psr\Http\Message\ResponseInterface $response The response to look for cookies
+     * @return array
+     */
+    private function tryToGetCookiesFromResponse(ResponseInterface $response): array
     {
-        $server = $request->getServerParams();
-        $server['REQUEST_TIME'] = time();
-        $server['REQUEST_TIME_FLOAT'] = microtime(true);
-        $server['REMOTE_ADDR'] = '127.0.0.1';
-        $server['SERVER_PROTOCOL'] = $request->getUri()->getScheme();
-        $server['REQUEST_METHOD'] = $request->getMethod();
-        $server['SERVER_NAME'] = $request->getUri()->getHost();
-        $server['SERVER_PORT'] = $request->getUri()->getPort();
-        $server['REQUEST_URI'] = $request->getUri()->getPath();
+        if (!($response instanceof CakeResponse)) {
+            return [];
+        }
 
-        $query = $request->getQueryParams();
-        $body = $request->getParsedBody();
-        $cookies = $request->getCookieParams();
-        $files = $request->getUploadedFiles();
+        $cookies = [];
+        foreach ($response->getCookieCollection() as $cookie) {
+            if (!$cookie->getExpiresTimestamp()) {
+                $cookie = $cookie->withNeverExpire();
+            }
+            $cookies[] = $cookie->toHeaderValue();
+        }
 
-        $cakeRequest = ServerRequestFactory::fromGlobals($server, $query, $body, $cookies, $files);
+        return $cookies;
+    }
+
+    /**
+     * Generates a host header, based upon the contents from the URI.
+     *
+     * @param \Psr\Http\Message\UriInterface $uri The request's URI
+     * @return string The generated Host header.
+     */
+    protected static function buildHostHeaderFromUri(UriInterface $uri): string
+    {
+        $uriPort = $uri->getPort();
+        if ($uriPort === null) {
+            return $uri->getHost();
+        }
+
+        $shouldIncludePort = ($uri->getScheme() === 'http' && $uriPort !== 80)
+            || ($uri->getScheme() === 'https' && $uriPort !== 443);
+
+        if ($shouldIncludePort) {
+            return "{$uri->getHost()}:{$uri->getPort()}";
+        } else {
+            return $uri->getHost();
+        }
+    }
+
+    /**
+     * Convert ServerRequestInterface to Cake ServerRequest. This is necessary since some CakePHP internals and some
+     * plugin middleware require an instance of Cake ServerRequest.
+     *
+     * @todo result of `$request->getParsedBody()` is always null, see link tag below this todo. We rely on
+     *      BodyParserMiddleware after setting the body on the ServerRequest below.
+     * @link https://github.com/roadrunner-server/roadrunner/discussions/953
+     * @param \Laminas\Diactoros\ServerRequest $request An instance of Laminas's ServerRequest
+     * @return \Cake\Http\ServerRequest
+     */
+    public static function convertRequest(LaminasServerRequest $request): CakeServerRequest
+    {
+        // Add the Host header and the HTTP_HOST environment variable to the request.
+        // Those are not added on the request that comes from Roadrunner, so we derive
+        // it from the host in the URI.
+        $host = static::buildHostHeaderFromUri($request->getUri());
+        $serverParams = $request->getServerParams() + [
+            'HTTP_HOST' => $host,
+        ];
+
+        $cakeRequest = ServerRequestFactory::fromGlobals(
+            $serverParams,
+            $request->getQueryParams(),
+            $request->getParsedBody(),
+            $request->getCookieParams(),
+            $request->getUploadedFiles()
+        );
         $cakeRequest->trustProxy = true;
 
-        return $cakeRequest;
+        $cakeRequest = static::copyHeadersFromRoadrunnerRequest($cakeRequest, $request);
+        $cakeRequest = static::parseBasicAuthenticationIntoRequestEnvironment($cakeRequest);
+        $cakeRequest = $cakeRequest->withUri($request->getUri());
+
+        $request->getBody()->rewind();
+
+        return clone $cakeRequest->withBody($request->getBody());
+    }
+
+    /**
+     * Copies the headers from the original request (originated from Roadrunner) to our
+     * converted request. This is needed because, otherwise, headers are parsed from the `$request->getServerParams()`
+     * contents, and in those duplicated headers are concatenated into a single comma-separated one.
+     *
+     * @param \Cake\Http\ServerRequest $convertedRequest Our converted request
+     * @param \Laminas\Diactoros\ServerRequest $roadrunnerRequest The original request
+     * @return \Cake\Http\ServerRequest
+     */
+    protected static function copyHeadersFromRoadrunnerRequest(
+        CakeServerRequest $convertedRequest,
+        LaminasServerRequest $roadrunnerRequest
+    ): CakeServerRequest {
+        foreach ($roadrunnerRequest->getHeaders() as $headerName => $headerValue) {
+            // This is needed because internally CakePHP stores headers in the same place as
+            // the request's environment variables, and when we call `withHeader` with an array parameter
+            // this environment variable contents (retrieved by calling `$request->getEnv()`) change from
+            // a string to an array.
+            if (count($headerValue) === 1) {
+                $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue[0]);
+            } else {
+                $convertedRequest = $convertedRequest->withHeader($headerName, $headerValue);
+            }
+        }
+
+        return $convertedRequest;
+    }
+
+    /**
+     * If they're present, parses basic authentication info from the request headers into the
+     * `PHP_AUTH_USER` and `PHP_AUTH_PW` request environment variables.
+     *
+     * @param \Cake\Http\ServerRequest $request The request with the data to be parsed
+     * @return \Cake\Http\ServerRequest
+     */
+    protected static function parseBasicAuthenticationIntoRequestEnvironment(
+        CakeServerRequest $request
+    ): CakeServerRequest {
+        $authorizationHeader = $request->getHeader('Authorization')[0] ?? null;
+        if ($authorizationHeader === null) {
+            return $request;
+        }
+
+        $matches = [];
+        $matched = preg_match('/Basic\s+(.*)$/i', $authorizationHeader, $matches);
+        if (!$matched) {
+            return $request;
+        }
+
+        $decodedParameter = base64_decode($matches[1], true);
+        if (!$decodedParameter) {
+            return $request;
+        }
+
+        $parts = explode(':', $decodedParameter, 2);
+
+        return $request
+            ->withEnv('PHP_AUTH_USER', $parts[0])
+            ->withEnv('PHP_AUTH_PW', $parts[1] ?? '');
     }
 }

@@ -1,38 +1,76 @@
-Roadrunner for CakePHP
-===================
+# Roadrunner for CakePHP
 
-[![Downloads](https://poser.pugx.org/cakedc/cakephp-roadrunner/d/total.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
-[![Latest Version](https://poser.pugx.org/cakedc/cakephp-roadrunner/v/stable.png)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
-[![License](https://poser.pugx.org/cakedc/cakephp-roadrunner/license.svg)](https://packagist.org/packages/cakedc/cakephp-roadrunner)
+[RoadRunner](https://roadrunner.dev/) is a high-performance PHP application server, load-balancer, and process 
+manager written in Golang. Using Roadrunner you can replace php-fpm a long with nginx or apache.
 
+## Requirements
 
-Requirements
-------------
+* CakePHP ^4.4
+* PHP ^8.1
+* Roadrunner ^2023.1.4
 
-* CakePHP 3.6.0+
-* PHP 7.1+
+## Table of Contents
+ 
+- [Install](#install)
+- [Sessions](#sessions)
+- [Static Assets](#static-assets)
 
-Setup
------
+## Install
 
-* `composer require cakedc/cakephp-roadrunner`
-* Download roadrunner binary and place the file in your filesystem, for example under `/usr/local/bin/rr`
-* Create a RoadRunner worker file, or use the example worker provided
+Install via composer:
 
-```bash
-cp vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php .
-cp vendor/cakedc/cakephp-roadrunner/worker/.rr.json .
+```console
+composer require cakedc/cakephp-roadrunner
 ```
 
-Note the configuration is stored in .rr.json file, check all possible keys here
-https://github.com/spiral/roadrunner/wiki/Configuration
+Unlike most CakePHP plugins you won't be needing to load the plugin in your `src/Application.php`.
 
-* Start the server, either using your own configuration or the sample configuration provided in the plugin
+### Installing Roadrunner
 
-`/usr/local/bin/rr serve`
+Roadrunner ships as a single go binary. Download the Roadrunner binary from the 
+[release page](https://github.com/roadrunner-server/roadrunner/releases) and copy the file to your 
+filesystem, for example under `/usr/local/bin/rr` or `/usr/bin/rr`.
 
-* If you need sessions
-  * Ensure you add the following to your session config in your CakePHP `config/app.php`
+If your project uses Docker you can easily add the binary to your Dockerfile:
+
+```dockerfile
+FROM spiralscout/roadrunner:2.12 as roadrunner
+COPY --from=roadrunner /usr/bin/rr /usr/bin/rr
+```
+
+Be sure to check the Roadrunner documentation for up-to-date [docker images](https://roadrunner.dev/docs/docker-images).
+
+### Configuring Roadrunner
+
+In a typical PHP application your webserver forwards `*.php` requests to php-fpm, which in turn calls the CakePHP
+front controller `webroot/index.php`. With Roadrunner, the worker file gets called by active workers to handle
+incoming requests to your application. 
+
+Create a Roadrunner worker file, or use the [example worker](worker/cakephp-worker.php) provided:
+
+```console
+cp vendor/cakedc/cakephp-roadrunner/worker/cakephp-worker.php .
+```
+
+Next we need to instruct Roadrunner to use our worker a long with a few other configs. Create a 
+[Roadrunner config](https://roadrunner.dev/docs/intro-config) file, or use the [example config](worker/rr.yaml) 
+provided:
+
+```console
+cp vendor/cakedc/cakephp-roadrunner/worker/rr.yaml .
+```
+
+Start the server:
+
+```console
+/usr/local/bin/rr serve -d -c rr.yaml
+```
+
+You should now be able to browse to http://localhost:8080
+
+## Sessions
+
+If you need sessions ensure you add the following to your session config in your CakePHP `config/app.php`
 
 ```php
     'Session' => [
@@ -53,7 +91,7 @@ https://github.com/spiral/roadrunner/wiki/Configuration
     ->add(new \Relay\Middleware\SessionHeadersHandler())
 ```
 
-* Nginx proxy
+## Static Assets
 
 You'll possibly need to configure a webserver to handle requests, serve static assets etc.
 Use this sample config virtualhost for nginx:
@@ -76,33 +114,7 @@ server {
         proxy_set_header X-Forwarded-Host $server_name;
     }
 }
-
 ```
-  
-Documentation
--------------
 
-For documentation, as well as tutorials, see the [Docs](Docs/Home.md) directory of this repository.
-
-Support
--------
-
-For bugs and feature requests, please use the [issues](https://github.com/cakedc/cakephp-roadrunner/issues) section of this repository.
-
-Commercial support is also available, [contact us](https://www.cakedc.com/contact) for more information.
-
-Contributing
-------------
-
-This repository follows the [CakeDC Plugin Standard](https://www.cakedc.com/plugin-standard). If you'd like to contribute new features, enhancements or bug fixes to the plugin, please read our [Contribution Guidelines](https://www.cakedc.com/contribution-guidelines) for detailed instructions.
-
-License
--------
-
-Copyright 2019 Cake Development Corporation (CakeDC). All rights reserved.
-
-Licensed under the [MIT](http://www.opensource.org/licenses/mit-license.php) License. Redistributions of the source code included in this repository must retain the copyright notice found in each file.
-
-Todo
-----
-* Existing issue setting cookies like $this->response = $this->response->withHeader('head', 'one'); conflicts with session cookie generation
+Roadrunner also supports [serving static assets](https://roadrunner.dev/docs/http-static) natively. Check the 
+[worker/rr.yaml](worker/rr.yaml) file that ships with this project for an example.
